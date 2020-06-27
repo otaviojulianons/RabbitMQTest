@@ -7,6 +7,10 @@ namespace RabbitTest
 {
     public class Program
     {
+
+        private const string QUEUE_START = "start";
+        private const string QUEUE_END = "end";
+
         private static BusService _busService;
 
         public static void Main(string[] args)
@@ -15,28 +19,28 @@ namespace RabbitTest
             {
                 Console.SetWindowSize(60, 10);
 
-                BusConfig busConfig = new BusConfig("publisher", "1111", "rabbitmq://192.168.1.7:5672/");
-                EndpointConvention.Map<StartNotification>(new Uri(busConfig.Host, "start"));
-                EndpointConvention.Map<EndNotification>(new Uri(busConfig.Host, "end"));
+                BusConfig busConfig = new BusConfig("publisher", "1111", "rabbitmq://192.168.1.9:5672/");
+                EndpointConvention.Map<StartNotification>(new Uri(busConfig.Host, QUEUE_START));
+                EndpointConvention.Map<EndNotification2>(new Uri(busConfig.Host, QUEUE_END));
 
                 string consumer = args.Length > 0 ? args[0] : null;
                 switch (consumer)
                 {
                     case "start":
-                        busConfig.ReceiveEndpoints.Add(new BusReceiveEndpoint("start", endpoint =>
+                        busConfig.ReceiveEndpoints.Add(new BusReceiveEndpoint(QUEUE_START, endpoint =>
                         {
                             endpoint.Handler<StartNotification>(async context =>
                             {
                                 await Console.Out.WriteLineAsync($"Start message Received: {context.Message.ToString()}");
-                                var endNotification = new EndNotification(context.Message);
+                                var endNotification = new EndNotification2(context.Message);
                                 context.Send(endNotification);
                             });
                         }));
                         break;
                     case "end":
-                        busConfig.ReceiveEndpoints.Add(new BusReceiveEndpoint("end", endpoint =>
+                        busConfig.ReceiveEndpoints.Add(new BusReceiveEndpoint(QUEUE_END, endpoint =>
                         {
-                            endpoint.Handler<EndNotification>(async context =>
+                            endpoint.Handler<EndNotification2>(async context =>
                             {
                                 await Console.Out.WriteLineAsync($"End message Received: {context.Message.ToString()}");
                             });
@@ -114,7 +118,7 @@ namespace RabbitTest
             process.UseShellExecute = true;
             process.CreateNoWindow = false;
             process.FileName = "dotnet";
-            process.Arguments = "RabbitTest.dll " + consumer;
+            process.Arguments = "Console.dll " + consumer;
             Process.Start(process);
 
             Console.WriteLine("new consumer - " + consumer);

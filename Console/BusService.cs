@@ -26,6 +26,7 @@ namespace RabbitTest
 
                 foreach(var endpoint in _busConfig.ReceiveEndpoints)
                     cfg.ReceiveEndpoint(host, endpoint.QueueName, endpoint.Action);
+
             });
 
             BusControl.Start();
